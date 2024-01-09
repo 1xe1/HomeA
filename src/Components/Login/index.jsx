@@ -1,6 +1,7 @@
+// Login.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DataHomeU } from '../Api/ApiHomeU';
+import loginUser from '../Api/ApiLogin';  // Adjust the import based on your file structure
 import './index.css';
 
 const Login = () => {
@@ -24,15 +25,11 @@ const Login = () => {
     }
 
     try {
-      // Assuming the API requires email and password for authentication
-      const userData = await DataHomeU(email, password);
+      const userData = await loginUser(email, password);
 
-      // Assuming the API returns a success flag or user data on successful login
       if (userData.success) {
         console.log("Login successful");
         setError("");
-
-        // Navigate to the main page
         navigate('/main'); // Replace '/main' with the actual route to your main page
       } else {
         console.log("Login failed");

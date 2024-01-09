@@ -1,44 +1,73 @@
-// Login.js
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import loginUser from '../Api/ApiLogin';  // Adjust the import based on your file structure
-import './index.css';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import "./index.css";
 
-const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+const Login = ({ onLogin }) => {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
   const navigate = useNavigate();
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
-
     try {
-      const userData = await loginUser(email, password);
+      const response = await fetch("http://localhost:8081/HomeA/apiLogin/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", // Update content type to JSON
+        },
+        body: JSON.stringify(formData), // Stringify the body to JSON
+      });
 
-      if (userData.success) {
-        console.log("Login successful");
-        setError("");
-        navigate('/main'); // Replace '/main' with the actual route to your main page
+      console.log("Response Status:", response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        const { FirstName, LastName } = data; // Assuming the server returns these fields
+
+        // Assuming successful login, set the user
+        onLogin(formData.email);
+
+        // Display a welcome notification with FirstName and LastName
+        toast.success(`Welcome, ${FirstName} ${LastName}!`);
+
+        // Redirect to the dashboard
+        navigate("/sale");
       } else {
-        console.log("Login failed");
-        setError("Invalid email or password");
+        // Handle server errors or invalid credentials
+        const errorData = await response.json(); // Parse error response
+
+        // Check if the response contains an error message
+        const errorMessage =
+          errorData && errorData.message
+            ? errorData.message
+            : "Please check your credentials.";
+
+        toast.error(errorMessage);
       }
     } catch (error) {
-      console.error("Login failed:", error);
-      setError("Error during login");
+      console.error("Error during login:", error);
+
+      // Handle network errors or unexpected issues
+      toast.error("An unexpected error occurred. Please try again later.");
     }
+  };
+
+  const handleRegister = () => {
+    // Add your registration logic here
+    navigate("/register");
   };
 
   return (
@@ -51,9 +80,10 @@ const Login = () => {
               <ion-icon name="mail-outline"></ion-icon>
               <input
                 type="email"
+                name="email"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={handleInputChange}
               />
               <label htmlFor="">Email</label>
             </div>
@@ -61,9 +91,10 @@ const Login = () => {
               <ion-icon name="lock-closed-outline"></ion-icon>
               <input
                 type="password"
+                name="password"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={handleInputChange}
               />
               <label htmlFor="">Password</label>
             </div>
@@ -75,11 +106,13 @@ const Login = () => {
                 <a href="#">Forgot password?</a>
               </label>
             </div>
-            {error && <p className="error-message">{error}</p>}
             <button type="submit">Log in</button>
             <div className="register">
               <p>
-                Don't have an account? <a href="#">Register</a>
+                Don't have an account?{" "}
+                <a href="#" onClick={handleRegister}>
+                  Register
+                </a>
               </p>
             </div>
           </form>
@@ -88,5 +121,4 @@ const Login = () => {
     </section>
   );
 };
-
 export default Login;

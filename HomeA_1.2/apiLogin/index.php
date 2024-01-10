@@ -1,66 +1,71 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: *");
-header("Access-Control-Allow-Methods: *");
-header("Content-Type: application/json");
+include 'connection.php';
 
-// Include the database connection file
-require_once 'connection.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    ini_set('display_errors', 1);
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Headers: *");
+    header("Access-Control-Allow-Methods: *");
+    header("Content-Type: application/json");
+    
+    $xok = 401;
 
-// Get request method
-$method = $_SERVER['REQUEST_METHOD'];
+    // Retrieve user input
+    $email = mysqli_real_escape_string($conn, $_POST['email']);
+    $password = mysqli_real_escape_string($conn, $_POST['password']);
 
-// Retrieve the input data
-$data = json_decode(file_get_contents("php://input"), true);
+    // Prepare and execute SQL query
+    $stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE Email = ? AND Password = ?");
+    mysqli_stmt_bind_param($stmt, "ss", $email, $password);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
 
-// Perform operations based on the request method
-switch ($method) {
-    case 'POST':
-        // Handle POST request to perform login
-        $email = $data['email'];
-        $password = $data['password'];
+    // Check if query was successful
+    if ($result) {
+        $row = mysqli_fetch_assoc($result);
 
-        $stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE Email = ?");
-        mysqli_stmt_bind_param($stmt, "s", $email);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
+        if ($row) {
+            // Successful login
+            $xok = 200;
 
-        if ($result) {
-            $row = mysqli_fetch_assoc($result);
+            // Return only necessary information, not the entire row
+            $output = array(
+                "UserID" => $row["UserID"],
+                "Username" => $row["Username"],
+                "Email" => $row["Email"]
+                // Add other necessary fields
+            );
 
-            if ($row && password_verify($password, $row['Password'])) {
-                // Successful login
-                $response = array(
-                    "UserID" => $row["UserID"],
-                    "FirstName" => $row["FirstName"], // Assuming this column exists in your database
-                    "LastName" => $row["LastName"],   // Assuming this column exists in your database
-                    "Email" => $row["Email"]
-                    // Add other necessary fields
-                );
-
-                http_response_code(200);
-                echo json_encode($response);
-            } else {
-                // Invalid credentials
-                http_response_code(401);
-                echo json_encode(array("message" => "Invalid login credentials"));
-            }
+            http_response_code($xok);
+            echo json_encode($output);
         } else {
-            // Database query error
-            http_response_code(500);
-            echo json_encode(array("message" => "Internal Server Error"));
+            // Invalid credentials
+            http_response_code(401);
+            echo json_encode(array("message" => "Invalid login credentials"));
         }
+    } else {
+        // Database query error
+        http_response_code(500);
+        echo json_encode(array("message" => "Internal Server Error"));
+    }
 
-        mysqli_stmt_close($stmt);
-        mysqli_close($conn);
-        break;
+    mysqli_stmt_close($stmt);
+    mysqli_close($conn);
+} else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Implement authentication logic if needed
 
-    default:
-        // Invalid request method
-        $response = array('status' => 'error', 'message' => 'Invalid request method');
-        echo json_encode($response);
-        break;
+    // Retrieve user data without sensitive information
+    $result = $conn->query("SELECT UserID, Username, Email FROM users");
+    $users = array();
+
+    while ($row = $result->fetch_assoc()) {
+        $users[] = $row;
+    }
+
+    echo json_encode($users);
+} else {
+    // Invalid request method
+    http_response_code(405);
+    echo json_encode(array("message" => "Invalid Request Method"));
 }
 ?>

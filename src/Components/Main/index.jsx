@@ -1,15 +1,22 @@
-// Import useEffect, useState from React
+//Main
 import React, { useState, useEffect } from "react";
-import "./index.css";
 import { DataHomeB } from "../Api/ApiHomeB";
 import { DataHomeP } from "../Api/ApiHomeP";
 import { DataHomeU } from "../Api/ApiHomeU";
+import ShowHome from "../ShowHome";
+import './index.css';
+import { FaWindowClose } from "react-icons/fa";
+import { Link } from "react-router-dom";
+
+
 
 const Main = () => {
   const [properties, setProperties] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showPopup, setShowPopup] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
-  const [biddingHistory, setBiddingHistory] = useState([]);
+  const [bidsPagePropertyID, setBidsPagePropertyID] = useState(null);
+
 
   useEffect(() => {
     fetchData()
@@ -59,86 +66,22 @@ const Main = () => {
       property.District.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const calculateTimeLeft = (endTime) => {
-    const currentTime = new Date();
-    const endDateTime = new Date(endTime);
-    const timeDifference = endDateTime - currentTime;
-
-    const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-    const hours = Math.floor(
-      (timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-    );
-    const minutes = Math.floor(
-      (timeDifference % (1000 * 60 * 60)) / (1000 * 60)
-    );
-
-    return `${days}d ${hours}h ${minutes}m`;
-  };
-
-  const formatDate = (dateString) => {
-    const options = {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      second: "numeric",
-      timeZoneName: "short",
-    };
-    const formattedDate = new Date(dateString).toLocaleDateString(
-      undefined,
-      options
-    );
-    return formattedDate;
-  };
-
-  const handlePopup = async (property) => {
+  const handleBidClick = (property) => {
     setSelectedProperty(property);
-
-    // Fetch bidding history based on PropertyID
-    try {
-      const biddingHistoryData = await fetchBiddingHistory(property.PropertyID);
-      setBiddingHistory(biddingHistoryData);
-    } catch (error) {
-      console.error("Error fetching bidding history:", error);
-    }
+    setShowPopup(true);
+  };
+  const handleBidsButtonClick = () => {
+    setBidsPagePropertyID(selectedProperty.PropertyID);
   };
 
-  const fetchBiddingHistory = async (propertyID) => {
-    try {
-      // Replace the following line with actual API call to fetch bidding history
-      // const response = await fetch(`/api/bidding-history?propertyID=${propertyID}`);
-      // const biddingHistoryData = await response.json();
-
-      // Mock data for testing
-      const biddingHistoryData = [
-        {
-          BidID: 1,
-          Username: "User1",
-          BidAmount: 150000,
-          BidTime: "2023-02-15T12:30:00Z",
-        },
-        {
-          BidID: 2,
-          Username: "User2",
-          BidAmount: 160000,
-          BidTime: "2023-02-16T14:45:00Z",
-        },
-        // Add more entries as needed
-      ];
-
-      return biddingHistoryData;
-    } catch (error) {
-      console.error("Error fetching bidding history:", error);
-      return [];
-    }
+  const handleClosePopup = () => {
+    setShowPopup(false);
   };
 
   return (
     <div className="min-h-screen w-screen overflow-y-auto">
       <div className="container mx-auto p-8 ">
         <div className="p-3 bg-purple-50/40 rounded shadow-md mb-10">
-          {/* Search Section */}
           <div className="flex items-center space-x-4">
             <input
               type="text"
@@ -149,10 +92,10 @@ const Main = () => {
             />
           </div>
         </div>
-        {/* Display Property Cards */}
+
         <div className="p-1 flex flex-wrap items-center justify-center">
           {filteredProperties.map((property, index) => (
-            <React.Fragment key={property.PropertyID}>
+            <React.Fragment key={`property-${property.PropertyID}-${index}`}>
               <div className="flex-shrink-0 m-6 relative overflow-hidden bg-purple-500/80 rounded-lg w-72 h-96 shadow-lg">
                 <svg
                   className="absolute bottom-0 left-0 mb-8"
@@ -195,11 +138,8 @@ const Main = () => {
                     <span className="block font-semibold text-xl">
                       {property.PropertyName}
                     </span>
-                    <div className="">
-                      <span
-                        className="group-hover block bg-white rounded-full text-purple-500 text-xs text-center font-bold px-3 py-2 leading-none flex items-center "
-                        onClick={() => handlePopup(property)}
-                      >
+                    <div className="" onClick={() => handleBidClick(property)}>
+                      <span className="group-hover block bg-white rounded-full text-purple-500 text-xs text-center font-bold px-3 py-2">
                         {`$${Number(property.BidAmount).toFixed(2)}`}{" "}
                       </span>
                     </div>
@@ -208,72 +148,49 @@ const Main = () => {
               </div>
 
               {(index + 1) % 4 === 0 && (
-                <div
-                  key={`row-separator-${index}`}
-                  className="w-full h-8"
-                ></div>
+                <div key={`row-separator-${index}`} className="w-full h-8"></div>
               )}
             </React.Fragment>
           ))}
         </div>
-        // Inside the render part of your component
-        {selectedProperty && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center">
-            <div className="bg-white p-8 max-w-md w-full rounded-lg">
-              <h2 className="text-2xl font-bold mb-4">
-                {selectedProperty.PropertyName}
-              </h2>
-              <img
-                src={selectedProperty.ImageLink}
-                alt={`Property ${selectedProperty.PropertyID}`}
-                className="relative w-full h-auto border border-purple-900 mt-4"
-              />
-              <p>
-                <strong>Current Bid:</strong>{" "}
-                {selectedProperty.CurrentBid
-                  ? `$${Number(selectedProperty.CurrentBid).toFixed(2)}`
-                  : "N/A"}
-              </p>
-              <p>
-                <strong>Time Left:</strong>{" "}
-                {calculateTimeLeft(selectedProperty.EndTime)}
-              </p>
-              <p>
-                <strong>Scheduled End Date:</strong>{" "}
-                {formatDate(selectedProperty.EndTime)}
-              </p>
-              <h3 className="text-xl font-semibold mt-4">Bidding History:</h3>
-              <table className="w-full mt-2">
-                <thead>
-                  <tr>
-                    <th className="py-2 px-4 border-b">User</th>
-                    <th className="py-2 px-4 border-b">Amount</th>
-                    <th className="py-2 px-4 border-b">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {biddingHistory.map((bid) => (
-                    <tr key={bid.BidID}>
-                      <td className="py-2 px-4 border-b">{bid.Username}</td>
-                      <td className="py-2 px-4 border-b">
-                        ${bid.BidAmount.toFixed(2)}
-                      </td>
-                      <td className="py-2 px-4 border-b">
-                        {formatDate(bid.BidTime)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <button
-                className="bg-purple-500 text-white px-4 py-2 rounded mt-4"
-                onClick={() => setSelectedProperty(null)}
-              >
-                ปิด
-              </button>
+
+        {/* Display Popup */}
+        {showPopup && selectedProperty && (
+          <div className="fixed top-0 left-0 h-full w-full bg-black bg-opacity-50 flex items-center justify-center" >
+            <div className="bg-white p-8 rounded-lg">
+            <div className="">
+              <FaWindowClose className=" size-9 hover:w-11 h-auto" onClick={handleClosePopup}/>
+            </div>
+              <h2 className=" text-black pb-2">{selectedProperty.PropertyName}</h2>
+              <div className="">
+                <img
+                  src={selectedProperty.ImageLink}
+                  alt={`Property ${selectedProperty.PropertyID}`}
+                  className=" w-96 h-auto pb-4"
+                />
+              </div>
+              <p>User: {selectedProperty.Username}</p>
+              <p>Province: {selectedProperty.Province}</p>
+              <p>District: {selectedProperty.District}</p>
+              <p>Description: {selectedProperty.Description}</p>
+              <p>Bid Amount: ${Number(selectedProperty.BidAmount).toFixed(2)}</p>
+              <div className="pl-14 pt-5">
+                <div>
+                  Start: {selectedProperty.StartTime}
+                </div>
+                <div>
+                  End: {selectedProperty.EndTime}
+
+                </div>
+              </div>
+              {/* Add other property details as needed */}
+              <Link to={`/showhome/${selectedProperty.PropertyID}`}>
+              <button onClick={handleBidsButtonClick}>Bids{selectedProperty.PropertyID}</button>
+            </Link>
             </div>
           </div>
         )}
+        {bidsPagePropertyID && <ShowHome propertyID={bidsPagePropertyID} />}
       </div>
     </div>
   );

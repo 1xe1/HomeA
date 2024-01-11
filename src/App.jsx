@@ -6,6 +6,7 @@ import PersernalUser from './Components/PersernalUser';
 import Admin from './Components/Admin';
 import Login from './Components/Login';
 import ShowHome from './Components/ShowHome'
+import Footer from './Components/Footer';
 
 import backgroundImage from './assets/bg.png';
 
@@ -20,7 +21,6 @@ function App() {
     <div style={appStyle}>
       
       <Navbar />
-      <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css" rel="stylesheet"></link>
       <Routes>
       <Route path="/" element={<Login />} />
         <Route path="/Login" element={<Login />} />
@@ -29,6 +29,7 @@ function App() {
         <Route path="/PersonalUser" element={<PersernalUser />} />
         <Route path="/ShowHome/:propertyID" component={ShowHome} />
       </Routes>
+      <Footer />
     </div>
   );
 }

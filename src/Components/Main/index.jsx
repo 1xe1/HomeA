@@ -154,7 +154,7 @@ const Main = () => {
           ))}
         </div>
 
-        {/* Display Popup */}
+        
         {showPopup && selectedProperty && (
           <div className="fixed top-0 left-0 h-full w-full bg-black bg-opacity-50 flex items-center justify-center" >
             <div className="bg-white p-8 rounded-lg">

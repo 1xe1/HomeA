@@ -1,75 +1,78 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import "./index.css";
+import './index.css';
 
 const Login = ({ onLogin }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
 
-  const navigate = useNavigate();
-
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value,
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
+  
     try {
-      const response = await fetch("http://localhost:8081/HomeA/apiLogin/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json", // Update content type to JSON
-        },
-        body: JSON.stringify(formData), // Stringify the body to JSON
-      });
-
-      console.log("Response Status:", response.status);
-
+      const response = await fetch(
+        "http://localhost:8081/HomeA/apiLogin/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams(formData).toString(),
+        }
+      );
+  
+      const data = await response.json();
+  
       if (response.ok) {
-        const data = await response.json();
-        const { FirstName, LastName } = data; // Assuming the server returns these fields
-
+        const { Username, Email, Permission } = data;
+  
         // Assuming successful login, set the user
-        onLogin(formData.email);
-
-        // Display a welcome notification with FirstName and LastName
-        toast.success(`Welcome, ${FirstName} ${LastName}!`);
-
-        // Redirect to the dashboard
-        navigate("/sale");
+        if (typeof onLogin === "function") {
+          // Assuming successful login, set the user
+          onLogin(formData.email);
+        }
+  
+        // Save user data in localStorage for later reference
+        localStorage.setItem("username", Username);
+        localStorage.setItem("email", Email);
+        localStorage.setItem("permission", Permission);
+  
+        // Display a welcome notification with Username
+        toast.success(`Welcome, ${Username}!`);
+  
+        // Check if the user is admin before navigating to the dashboard
+        if (Permission === 1) {
+          navigate("/admin"); // Assuming an admin route
+        } else {
+          // Redirect to the user dashboard
+          navigate("/main");
+        }
       } else {
-        // Handle server errors or invalid credentials
-        const errorData = await response.json(); // Parse error response
-
-        // Check if the response contains an error message
-        const errorMessage =
-          errorData && errorData.message
-            ? errorData.message
-            : "Please check your credentials.";
-
-        toast.error(errorMessage);
+        // Handle login error
+        toast.error("Please check your password.");
       }
     } catch (error) {
       console.error("Error during login:", error);
-
-      // Handle network errors or unexpected issues
-      toast.error("An unexpected error occurred. Please try again later.");
     }
   };
+  
 
   const handleRegister = () => {
-    // Add your registration logic here
-    navigate("/register");
+    // Implement your registration logic or navigation to the registration page
   };
 
+  
   return (
     <section>
       <div className="form-box">
@@ -106,7 +109,7 @@ const Login = ({ onLogin }) => {
                 <a href="#">Forgot password?</a>
               </label>
             </div>
-            <button type="submit">Log in</button>
+  <button type="submit">Log in</button>
             <div className="register">
               <p>
                 Don't have an account?{" "}
@@ -121,4 +124,5 @@ const Login = ({ onLogin }) => {
     </section>
   );
 };
+
 export default Login;

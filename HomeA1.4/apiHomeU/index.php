@@ -24,7 +24,7 @@ switch ($method) {
             $user_id = $_GET['user_id'];
             $sql = "SELECT * FROM users WHERE user_id='$user_id'";
         } else {
-            $sql = "SELECT * FROM users where status=1";
+            $sql = "SELECT * FROM users where status=0";
         }
 
         $result = $conn->query($sql);
@@ -84,9 +84,10 @@ switch ($method) {
     case 'DELETE':
         // Handle DELETE request to delete user data
         // Example: Delete a record from the "users" table
-        $user_id = $data['user_id'];
+        $UserID = $data['UserID'];
 
-        $sql = "DELETE FROM users WHERE user_id='$user_id'";
+        // Replace 'user_id' with the actual column name in your database
+        $sql = "UPDATE users SET status=1 WHERE UserID='$UserID'";
 
         if ($conn->query($sql) === TRUE) {
             $response = array('status' => 'success', 'message' => 'User record deleted successfully');

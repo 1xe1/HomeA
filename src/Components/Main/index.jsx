@@ -1,14 +1,13 @@
-//Main
 import React, { useState, useEffect } from "react";
 import { DataHomeB } from "../Api/ApiHomeB";
 import { DataHomeP } from "../Api/ApiHomeP";
 import { DataHomeU } from "../Api/ApiHomeU";
 import ShowHome from "../ShowHome";
-import './index.css';
 import { FaWindowClose } from "react-icons/fa";
 import { Link } from "react-router-dom";
-
-
+import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
+import './index.css';
 
 const Main = () => {
   const [properties, setProperties] = useState([]);
@@ -16,15 +15,66 @@ const Main = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [bidsPagePropertyID, setBidsPagePropertyID] = useState(null);
+  const [showAddPropertyPopup, setShowAddPropertyPopup] = useState(false);
+
+  const [newProperty, setNewProperty] = useState({
+    PropertyName: '',
+    Description: '',
+    Province: '',
+    District: '',
+    CurrentBid: 0,
+    StartTime: '',
+    EndTime: '',
+    ImageLink:'',
+  });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewProperty((prevProperty) => ({
+      ...prevProperty,
+      [name]: value,
+    }));
+  };
+  const handleAddPropertyClick = () => {
+    setShowAddPropertyPopup(true);
+  };
+
+  const handleCloseAddPropertyPopup = () => {
+    setShowAddPropertyPopup(false);
+  };
+
+  const handleAddProperty = async () => {
+    try {
+      const response = await fetch("http://localhost:8081/HomeA/apiHomeP/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newProperty),
+      });
+  
+      if (response.ok) {
+        const responseData = await response.json(); // Parse the response data
+        toast.success("Property added successfully");
+        
+        // Log the new data to the console
+        console.log("New Property Data:", responseData);
+  
+        // You can reset the form or clear the newProperty state here if needed
+        setShowAddPropertyPopup(false);
+      } else {
+        toast.error("Failed to add property");
+      }
+    } catch (error) {
+      toast.error("Error adding property");
+      console.error("Error:", error);
+    }
+  };
+  
 
 
   useEffect(() => {
-    fetchData()
-      .then((data) => {
-        console.log("Fetched data:", data);
-        setProperties(data);
-      })
-      .catch((error) => console.error("Error fetching data:", error));
+    fetchData();
   }, []);
 
   const fetchData = async () => {
@@ -40,7 +90,7 @@ const Main = () => {
           (bid) => bid.PropertyID === property.PropertyID
         );
         const correspondingUser = users.find(
-          (user) => user.UserID === correspondingBid.UserID
+          (user) => user && correspondingBid && user.UserID === correspondingBid.UserID
         );
 
         return {
@@ -50,26 +100,28 @@ const Main = () => {
         };
       });
 
-      return mergedData;
+      setProperties(mergedData);
     } catch (error) {
       console.error("Error fetching data:", error);
-      return [];
     }
   };
 
+  // Add the nullish coalescing operator to provide a default value
   const filteredProperties = properties.filter(
     (property) =>
-      property.Username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      property.BidAmount.toString().includes(searchQuery.toLowerCase()) ||
-      property.PropertyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      property.Province.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      property.District.toLowerCase().includes(searchQuery.toLowerCase())
+      property.Username?.toLowerCase().includes(searchQuery?.toLowerCase()) ||
+      property.BidAmount?.toString().includes(searchQuery?.toLowerCase()) ||
+      property.PropertyName?.toLowerCase().includes(searchQuery?.toLowerCase()) ||
+      property.Province?.toLowerCase().includes(searchQuery?.toLowerCase()) ||
+      property.District?.toLowerCase().includes(searchQuery?.toLowerCase())
   );
+
 
   const handleBidClick = (property) => {
     setSelectedProperty(property);
     setShowPopup(true);
   };
+
   const handleBidsButtonClick = () => {
     setBidsPagePropertyID(selectedProperty.PropertyID);
   };
@@ -80,9 +132,9 @@ const Main = () => {
 
   return (
     <div className="min-h-screen w-screen overflow-y-auto">
-      <div className="container mx-auto p-8 ">
-        <div className="p-3 bg-purple-50/40 rounded shadow-md mb-10">
-          <div className="flex items-center space-x-4">
+      <div className="container mx-auto p-8 bg-purple-900/40 rounded min-h-screen w-screen overflow-y-auto">
+        <div className=" flex justify-evenly">
+          <div className=" bg-purple-50/40 shadow-md p-3 rounded w-60">
             <input
               type="text"
               placeholder="Search...."
@@ -90,6 +142,9 @@ const Main = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+          </div>
+          <div className="shadow-md p-3 rounded w-60 border border-black">
+            <button className="w-full bg-purple-50/40 " onClick={handleAddPropertyClick}>add Properties</button>
           </div>
         </div>
 
@@ -154,42 +209,106 @@ const Main = () => {
           ))}
         </div>
 
-        
-        {showPopup && selectedProperty && (
-          <div className="fixed top-0 left-0 h-full w-full bg-black bg-opacity-50 flex items-center justify-center" >
-            <div className="bg-white p-8 rounded-lg">
-            <div className="">
-              <FaWindowClose className=" size-9 hover:w-11 h-auto" onClick={handleClosePopup}/>
-            </div>
-              <h2 className=" text-black pb-2">{selectedProperty.PropertyName}</h2>
-              <div className="">
-                <img
-                  src={selectedProperty.ImageLink}
-                  alt={`Property ${selectedProperty.PropertyID}`}
-                  className=" w-96 h-auto pb-4"
-                />
+        {showAddPropertyPopup && (
+          <div className="fixed top-0 left-0 h-full w-full bg-black bg-opacity-50 flex items-center justify-center">
+            <div className="bg-white p-8 rounded-lg max-w-md w-full flex flex-col">
+              <div className="flex justify-end">
+                <FaWindowClose className="hover:text-gray-700 focus:outline-none ml-auto size-10" onClick={handleCloseAddPropertyPopup} />
               </div>
-              <p>User: {selectedProperty.Username}</p>
-              <p>Province: {selectedProperty.Province}</p>
-              <p>District: {selectedProperty.District}</p>
-              <p>Description: {selectedProperty.Description}</p>
-              <p>Bid Amount: ${Number(selectedProperty.BidAmount).toFixed(2)}</p>
-              <div className="pl-14 pt-5">
-                <div>
-                  Start: {selectedProperty.StartTime}
-                </div>
-                <div>
-                  End: {selectedProperty.EndTime}
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Add New Property</h2>
 
+              {/* Property Registration Form */}
+              <form>
+                <div className="mb-4">
+                  <label htmlFor="propertyName" className="text-gray-800 block font-semibold mb-2">Property Name:</label>
+                  <input type="text" id="propertyName" name="PropertyName" onChange={handleInputChange} value={newProperty.PropertyName} className="p-2 border border-gray-300 rounded w-full" required />
                 </div>
-              </div>
-              {/* Add other property details as needed */}
-              <Link to={`/showhome/${selectedProperty.PropertyID}`}>
-              <button onClick={handleBidsButtonClick}>Bids{selectedProperty.PropertyID}</button>
-            </Link>
+
+                <div className="mb-4">
+                  <label htmlFor="description" className="text-gray-800 block font-semibold mb-2">Description:</label>
+                  <textarea id="description" name="Description" onChange={handleInputChange} value={newProperty.Description} className="p-2 border border-gray-300 rounded w-full" required />
+                </div>
+
+                <div className="mb-4">
+                  <label htmlFor="province" className="text-gray-800 block font-semibold mb-2">Province:</label>
+                  <input type="text" id="province" name="Province" onChange={handleInputChange} value={newProperty.Province} className="p-2 border border-gray-300 rounded w-full" required />
+                </div>
+
+                <div className="mb-4">
+                  <label htmlFor="district" className="text-gray-800 block font-semibold mb-2">District:</label>
+                  <input type="text" id="district" name="District" onChange={handleInputChange} value={newProperty.District} className="p-2 border border-gray-300 rounded w-full" required />
+                </div>
+
+                <div className="mb-4">
+                  <label htmlFor="currentBid" className="text-gray-800 block font-semibold mb-2">Current Bid:</label>
+                  <input type="number" id="currentBid" name="CurrentBid" onChange={handleInputChange} value={newProperty.CurrentBid} className="p-2 border border-gray-300 rounded w-full" required />
+                </div>
+
+                <div className="mb-4">
+                  <label htmlFor="startTime" className="text-gray-800 block font-semibold mb-2">Start Time:</label>
+                  <input type="datetime-local" id="startTime" name="StartTime" onChange={handleInputChange} value={newProperty.StartTime} className="p-2 border border-gray-300 rounded w-full" required />
+                </div>
+
+                <div className="mb-4">
+                  <label htmlFor="endTime" className="text-gray-800 block font-semibold mb-2">End Time:</label>
+                  <input type="datetime-local" id="endTime" name="EndTime" onChange={handleInputChange} value={newProperty.EndTime} className="p-2 border border-gray-300 rounded w-full" required />
+                </div>
+
+                <div className="mb-4">
+                  <label htmlFor="endTime" className="text-gray-800 block font-semibold mb-2">ImageLink:</label>
+                  <input type="datetime-local" id="endTime" name="EndTime" onChange={handleInputChange} value={newProperty.ImageLink} className="p-2 border border-gray-300 rounded w-full" required />
+                </div>
+
+                {/* Add more fields as needed */}
+
+                <div className="mt-4">
+                  <button type="button" className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-700" onClick={handleAddProperty}>
+                    Add Property
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
+
+        {showPopup && selectedProperty && (
+          <div className="fixed top-0 left-0 h-full w-full bg-black bg-opacity-50 flex items-center justify-center">
+            <div className="bg-white p-8 rounded-lg max-w-md w-full flex flex-col">
+              <div className="flex justify-end">
+
+                <FaWindowClose className=" hover:text-gray-700 focus:outline-none ml-auto size-10" onClick={handleClosePopup} />
+              </div>
+
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">{selectedProperty.PropertyName}</h2>
+              <div className="mb-4">
+                <img
+                  src={selectedProperty.ImageLink}
+                  alt={`Property ${selectedProperty.PropertyID}`}
+                  className="w-full h-auto rounded-lg"
+                />
+              </div>
+              <div className="text-gray-700">
+                <p><span className="font-semibold">User:</span> {selectedProperty.Username}</p>
+                <p><span className="font-semibold">Province:</span> {selectedProperty.Province}</p>
+                <p><span className="font-semibold">District:</span> {selectedProperty.District}</p>
+                <p><span className="font-semibold">Description:</span> {selectedProperty.Description}</p>
+                <p><span className="font-semibold">Bid Amount:</span> ${Number(selectedProperty.BidAmount).toFixed(2)}</p>
+                <div className="pl-4 pt-2">
+                  <p><span className="font-semibold">Start:</span> {selectedProperty.StartTime}</p>
+                  <p><span className="font-semibold">End:</span> {selectedProperty.EndTime}</p>
+                </div>
+              </div>
+              <div className="mt-4">
+                <Link to={`/showhome/${selectedProperty.PropertyID}`}>
+                  <button className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-700" onClick={handleBidsButtonClick}>
+                    View Bids
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {bidsPagePropertyID && <ShowHome propertyID={bidsPagePropertyID} />}
       </div>
     </div>

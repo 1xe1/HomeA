@@ -53,23 +53,30 @@ const Main = () => {
         body: JSON.stringify(newProperty),
       });
   
-      if (response.ok) {
-        const responseData = await response.json(); // Parse the response data
-        toast.success("Property added successfully");
-        
-        // Log the new data to the console
-        console.log("New Property Data:", responseData);
+      const contentType = response.headers.get("content-type");
   
-        // You can reset the form or clear the newProperty state here if needed
-        setShowAddPropertyPopup(false);
+      if (contentType && contentType.includes("application/json")) {
+        const responseData = await response.json();
+  
+        if (response.ok) {
+          toast.success("Property added successfully");
+          console.log("New Property Data:", responseData);
+          setShowAddPropertyPopup(false);
+        } else {
+          toast.error("Failed to add property");
+          console.error("Error in response:", responseData);
+        }
       } else {
-        toast.error("Failed to add property");
+        const responseText = await response.text(); // Get the response as text
+        console.error("Invalid content type in response. Response:", responseText);
+        // Handle the error or show an appropriate message
       }
     } catch (error) {
       toast.error("Error adding property");
       console.error("Error:", error);
     }
   };
+  
   
 
 
@@ -143,8 +150,8 @@ const Main = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="shadow-md p-3 rounded w-60 border border-black">
-            <button className="w-full bg-purple-50/40 " onClick={handleAddPropertyClick}>add Properties</button>
+          <div className="bg-purple-50/40 shadow-md p-2 rounded w-60 ">
+            <button className="w-full  h-full bg-green-500 rounded p-4 hover:bg-green-300 hover:text-lg" onClick={handleAddPropertyClick}>เพิ่มการประมูล</button>
           </div>
         </div>
 
@@ -255,8 +262,8 @@ const Main = () => {
                 </div>
 
                 <div className="mb-4">
-                  <label htmlFor="endTime" className="text-gray-800 block font-semibold mb-2">ImageLink:</label>
-                  <input type="datetime-local" id="endTime" name="EndTime" onChange={handleInputChange} value={newProperty.ImageLink} className="p-2 border border-gray-300 rounded w-full" required />
+                  <label htmlFor="ImageLink" className="text-gray-800 block font-semibold mb-2">ImageLink:</label>
+                  <input type="text" id="ImageLink" name="ImageLink" onChange={handleInputChange} value={newProperty.ImageLink} className="p-2 border border-gray-300 rounded w-full" required />
                 </div>
 
                 {/* Add more fields as needed */}

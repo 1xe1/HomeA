@@ -25,6 +25,22 @@ const Admin = () => {
   const [editedProperty, setEditedProperty] = useState({});
   const [isEditPropertyFormVisible, setEditPropertyFormVisible] = useState(false);
 
+  const refreshData = async () => {
+    try {
+      const resultBids = await DataHomeB();
+      setDataB(resultBids);
+
+      const resultUsers = await DataHomeU();
+      setDataU(resultUsers);
+
+      const resultProperties = await DataHomeP();
+      setDataP(resultProperties);
+
+      initializeDataTable();
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    }
+  };
   const fetchData = async () => {
     try {
       const resultBids = await DataHomeB();
@@ -56,9 +72,9 @@ const Admin = () => {
     // Show the edit user form
     setEditUserFormVisible(true);
   };
-  const handleEditProperty = (propertyID) => {
+  const handleEditProperty = (PropertyID) => {
     // Set the property to be edited
-    const propertyToEdit = dataP.find((property) => property.PropertyID === propertyID);
+    const propertyToEdit = dataP.find((property) => property.PropertyID === PropertyID);
 
     // Set the edited property state
     setEditedProperty({
@@ -90,6 +106,7 @@ const Admin = () => {
 
   useEffect(() => {
     fetchData();
+    refreshData();
   }, [showBids, showUsers, showProperties]); // Fetch data whenever the section changes
 
   useEffect(() => {
@@ -106,6 +123,8 @@ const Admin = () => {
         toast.success(`Deleting user with ID ${id}`);
         // Update state without refetching data
         setDataU(prevDataU => prevDataU.filter(user => user.UserID !== id));
+        // Trigger a refresh
+        refreshData();
       } else {
         toast.error(`Error deleting user with ID ${id}: ${response.data.message}`);
       }
@@ -114,18 +133,20 @@ const Admin = () => {
     }
   };
 
-  const handleDeleteProperty = async (propertyID) => {
+  const handleDeleteProperty = async (PropertyID) => {
     try {
       const response = await axios.delete('http://localhost:8081/HomeA/apiHomeP/', {
-        data: { property_id: propertyID },
+        data: { PropertyID: PropertyID },
       });
 
       if (response.data.status === 'success') {
-        toast.success(`Deleting property with ID ${propertyID}`);
+        toast.success(`Deleting property with ID ${PropertyID}`);
         // Update state without refetching data
-        setDataP(prevDataP => prevDataP.filter(property => property.PropertyID !== propertyID));
+        setDataP(prevDataP => prevDataP.filter(property => property.PropertyID !== PropertyID));
+        // Trigger a refresh
+        refreshData();
       } else {
-        toast.error(`Error deleting property with ID ${propertyID}: ${response.data.message}`);
+        toast.error(`Error deleting property with ID ${PropertyID}: ${response.data.message}`);
       }
     } catch (error) {
       console.error('Error deleting property:', error);
@@ -152,6 +173,8 @@ const Admin = () => {
           Password: '',
           Email: '',
         });
+        // Trigger a refresh
+        refreshData();
       } else {
         toast.error(`Error updating user with ID ${editedUser.UserID}: ${response.data.message}`);
       }
@@ -185,6 +208,8 @@ const Admin = () => {
           EndTime: '',
           ImageLink: '',
         });
+        // Trigger a refresh
+        refreshData();
       } else {
         toast.error(`Error updating property with ID ${editedProperty.PropertyID}: ${response.data.message}`);
       }
@@ -245,9 +270,7 @@ const Admin = () => {
   }, [showBids, showUsers, showProperties]);
 
   return (
-
     <div className="min-h-screen w-screen overflow-y-auto bg-purple-900/40 flex justify-center pb-5 pt-5">
-
       <div className="w-10/12">
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className='flex justify-evenly items-center h-32'>
@@ -258,16 +281,16 @@ const Admin = () => {
               <RiAuctionFill className=' size-16 w-full' /> Bids Data Management
             </button> */}
             <button
-              className='h-28 border border-black p-2 rounded-md bg-white hover:bg-gray-200 focus:outline-none'
+              className='h-36 w-52 border border-black p-2 rounded-md bg-white hover:bg-gray-200 focus:outline-none'
               onClick={() => { setShowBids(false); setShowProperties(true); setShowUsers(false); }}
             >
-              <FaHome className=' size-16 w-full' /> Properties Data Management
+              <FaHome className=' size-16 w-full' /> Properties
             </button>
             <button
-              className='h-28 border border-black p-2 rounded-md bg-white hover:bg-gray-200 focus:outline-none'
+              className='h-36 w-52 border border-black p-2 rounded-md bg-white hover:bg-gray-200 focus:outline-none'
               onClick={() => { setShowBids(false); setShowProperties(false); setShowUsers(true); }}
             >
-              <FaUsersCog className=' size-16 w-full' /> Users Data Management
+              <FaUsersCog className=' size-16 w-full' /> Users
             </button>
           </div>
           {showBids && (
@@ -323,7 +346,7 @@ const Admin = () => {
           {showProperties && (
             // Display properties data here
             <>
-              <h1 className="text-2xl font-bold text-center mb-6">Property Data Management</h1>
+              <h1 className="text-2xl font-bold text-center mb-6">จัดการข้อมูลบ้าน</h1>
               <div className="overflow-x-auto">
                 <table
                   key={showBids || showUsers || showProperties}
@@ -359,7 +382,7 @@ const Admin = () => {
                           <div className="w-10">{row.ImageLink}</div>
                         </td>
 
-                        <td className="p-3 flex">
+                        <td className="p-3 flex justify-evenly">
                           <button
                             className=" text-blue-500 hover:text-blue-700"
                             onClick={() => handleEditProperty(row.PropertyID)}
@@ -379,10 +402,10 @@ const Admin = () => {
                 </table>
               </div>
               {isEditPropertyFormVisible && (
-                <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center">
-                  <div className=''>
+                <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50  flex items-center justify-center ">
+                  <div className='w-10/10'>
                   <div className="bg-white p-6 rounded-lg ">
-                    <h1 className="text-2xl font-bold mb-4">Edit Property</h1>
+                    <h1 className="text-2xl font-bold mb-4">แก้ไข</h1>
                     <form>
                       <div className="mb-4">
                         <label htmlFor="propertyName" className="block text-sm font-medium text-gray-600">
@@ -519,7 +542,7 @@ const Admin = () => {
           {showUsers && (
             // Display users data here
             <>
-              <h1 className="text-2xl font-bold text-center mb-6">User Data Management</h1>
+              <h1 className="text-2xl font-bold text-center mb-6">จัดการข้อมูล User</h1>
               <div className="overflow-x-auto">
                 <table
                   key={showBids || showUsers || showProperties}
@@ -544,7 +567,7 @@ const Admin = () => {
                         <td className="p-3">{row.Password}</td>
                         <td className="p-3">{row.Email}</td>
                         <td className="p-3">{row.permission}</td>
-                        <td className="p-3 flex">
+                        <td className="p-3 flex justify-evenly">
                           <button
                             className=" text-blue-500 hover:text-blue-700"
                             onClick={() => handleEditUser(row.UserID)}
@@ -607,8 +630,9 @@ const Admin = () => {
                           className="mt-1 p-2 border border-gray-300 rounded-md w-full"
                         />
                       </div>
-                      <div className="flex justify-between">
-                        <button
+                      <div className="flex justify-evenly">
+                        <div>
+                          <button
                           type="button"
 
                           className="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 focus:outline-none" onClick={handleCancelUpdate}
@@ -620,6 +644,7 @@ const Admin = () => {
                         >
                           Update
                         </button>
+                        </div>
                       </div>
                     </form>
                   </div>

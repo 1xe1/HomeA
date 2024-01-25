@@ -30,26 +30,26 @@ const Navbar = ({ loggedIn, onLogout, username }) => {
   };
 
   return (
-    <nav className="bg-purple-500/20 p-5">
+    <nav className="bg-purple-500/20 p-3">
       <div className="container mx-auto flex justify-center items-center">
-        <div className="space-x-60 flex items-center ">
+        <div className="space-x-40 flex items-center ">
           <Link
             to="/Main"
-            className="text-white hover:text-gray-300 transition duration-300"
+            className="text-white text-sm hover:text-gray-300 transition duration-300"
           >
             Home
           </Link>
           <Link
             to="/PersonalUser"
-            className="text-white hover:text-gray-300 transition duration-300"
+            className="text-white text-sm hover:text-gray-300 transition duration-300"
           >
-            Personal User
+            Chat
           </Link>
           <Link to="Main">
             <img
               src={logoImage}
               alt="logo"
-              className="w-auto h-20 rounded-lg"
+              className="w-auto h-16 rounded-lg"
             />
           </Link>
           {loggedIn ? (
@@ -57,24 +57,23 @@ const Navbar = ({ loggedIn, onLogout, username }) => {
               {/* Add more links as needed */}
               <Link
                 to="/Admin"
-                className="text-white hover:text-gray-300 transition duration-300"
+                className="text-white text-sm hover:text-gray-300 transition duration-300"
               >
                 Admin
               </Link>
               <div className="relative" onMouseLeave={closeDropdown}>
                 <div
                   onMouseEnter={toggleDropdown}
-                  className="text-white cursor-pointer hover:text-gray-300 transition duration-300"
+                  className="text-white text-sm cursor-pointer hover:text-gray-300 transition duration-300"
                 >
-
                   {username}
                 </div>
 
                 {dropdownVisible && (
-                  <div className="absolute top-full left-0 mt-2 bg-white p-2 rounded shadow">
+                  <div className="absolute top-full left-0 mt-1 bg-white p-2 rounded shadow">
                     <div
                       onClick={handleLogout}
-                      className="cursor-pointer hover:text-gray-600 transition duration-300"
+                      className="cursor-pointer hover:text-gray-600 transition duration-300 text-sm"
                     >
                       Logout
                     </div>
@@ -86,6 +85,7 @@ const Navbar = ({ loggedIn, onLogout, username }) => {
         </div>
       </div>
     </nav>
+
   );
 };
 
